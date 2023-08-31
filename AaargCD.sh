@@ -1,8 +1,16 @@
+#!/bin/bash
+
+name=$1
+repo=$2
+folder=$3
+
+tmpfile=$(mktemp)
+cat <<EOF >$tmpfile
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: aaarg
+  name: $name
 spec:
   schedule: "*/5 * * * *"
   successfulJobsHistoryLimit: 4
@@ -18,12 +26,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - cd /tmp;git clone $repo repo; cd repo/${folder}; kubectl apply -f . 
-            env:
-            - name: repo
-              value: https://github.com/argoproj/argocd-example-apps.git
-            - name: folder
-              value: guestbook
+            - cd /tmp;git clone $repo repo; cd repo/$folder; kubectl apply -f .            
           restartPolicy: Never
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -37,3 +40,7 @@ roleRef:
   kind: ClusterRole
   name: admin
   apiGroup: rbac.authorization.k8s.io
+EOF
+
+kubectl apply -f $tmpfile
+rm -f $tmpfile
